@@ -1,7 +1,6 @@
 public class TaskCLI {
 
     public static void main(String[] args) {
-        // Accept inputs from the CLI
         if (args.length < 1) {
             System.out.println("Usage: task-cli <command> [arguments]");
             System.exit(1);
@@ -16,6 +15,21 @@ public class TaskCLI {
             System.out.println("\tmark-done [argument]\t\t\tMarks a task [argument] from the task list as done");
             System.out.println("\tlist [argument]\t\t\t\t\tLists all tasks in the task list with filter [argument]. If [argument] not specified then displays all tasks in the task list");
             System.exit(0);
+        } else if (args.length > 1 && args[0].equals("add")) {
+            String description = constructArgument(args);
+            System.out.println("Adding task: " + description);
+            int taskId = Task.addTask(description);
+            System.out.println("Added task \"" + description + "\" to the task list. (ID: " + taskId + ")");
         }
+    }
+
+    public static String constructArgument(String[] args) {
+        StringBuilder description = new StringBuilder();
+
+        for (int i = 1; i < args.length; i++) {
+            description.append(args[i]).append(" ");
+        }
+
+        return description.toString().trim();
     }
 }
