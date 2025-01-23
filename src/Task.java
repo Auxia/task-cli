@@ -1,5 +1,4 @@
 import java.time.LocalDateTime;
-import java.util.Date;
 
 public class Task {
     private static int lastId = 0;
@@ -22,7 +21,14 @@ public class Task {
     }
 
     public static int addTask(String description) {
+        // Creates an Instance of the Task and then stores it in a JSON file
         Task task = new Task(description);
+        updateDB("a", task);
         return task.getId();
+    }
+
+    private static void updateDB(char operation, Task task) {
+        // Write to the JSON file that stores Task Info.
+
     }
 }
