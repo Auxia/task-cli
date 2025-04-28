@@ -20,6 +20,11 @@ public class Task {
         return this.id;
     }
 
+    public void markToDo() {
+        this.status = TaskStatus.TODO;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void markInProgress() {
         this.status = TaskStatus.IN_PROGRESS;
         this.updatedAt = LocalDateTime.now();
