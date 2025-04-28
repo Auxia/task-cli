@@ -2,16 +2,16 @@ import java.time.LocalDateTime;
 
 public class Task {
     private static int lastId = 0;
-    private int id;
+    private final int id;
     private String description;
-    private int status; // Number from 0-2, describing, 0 - todo, 1 - in-progress, 2 - done.
-    private LocalDateTime createdAt;
+    private TaskStatus status;
+    private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     public Task(String description) {
         this.id = ++lastId;
         this.description = description;
-        this.status = 0;
+        this.status = TaskStatus.TODO;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -20,15 +20,23 @@ public class Task {
         return this.id;
     }
 
-    public static int addTask(String description) {
-        // Creates an Instance of the Task and then stores it in a JSON file
-        Task task = new Task(description);
-        updateDB("a", task);
-        return task.getId();
+    public void markInProgress() {
+        this.status = TaskStatus.IN_PROGRESS;
+        this.updatedAt = LocalDateTime.now();
     }
 
-    private static void updateDB(char operation, Task task) {
-        // Write to the JSON file that stores Task Info.
+    public void markDone() {
+        this.status = TaskStatus.DONE;
+        this.updatedAt = LocalDateTime.now();
+    }
 
+    public void updateDescription(String newDescription) {
+        this.description = newDescription;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public String convertToJson() {
+        return "{\"id\": " + this.id + ", \"description\": \"" + this.description + "\", \"status\": \"" + this.status.name() + "\","
+                + "\"createdAt\": " + this.createdAt + ", \"updatedAt\": " + this.updatedAt + "}";
     }
 }
