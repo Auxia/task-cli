@@ -18,8 +18,7 @@ public class TaskCLI {
         } else if (args.length > 1 && args[0].equals("add")) {
             String description = constructArgument(args);
             System.out.println("Adding task: " + description);
-            int taskId = Task.addTask(description);
-            System.out.println("Added task \"" + description + "\" to the task list. (ID: " + taskId + ")");
+            TaskManager.addTask(description);
         }
     }
 
