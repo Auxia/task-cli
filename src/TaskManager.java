@@ -8,10 +8,10 @@ import java.util.List;
 
 public class TaskManager {
     private final Path FILE_PATH = Path.of("tasks.json");
-    private static List<Task> tasks;
+    private List<Task> tasks;
 
     public TaskManager() {
-        tasks = loadTasks();
+        this.tasks = loadTasks();
     }
 
     public List<Task> loadTasks() {
@@ -23,7 +23,7 @@ public class TaskManager {
 
         try {
             String json = Files.readString(FILE_PATH);
-            String[] taskList = json.replace("[", "").replace("]", "").split(",");
+            String[] taskList = json.replace("[", "").replace("]", "").split("},");
 
             for (String task : taskList) {
                 if(!task.endsWith("}")) {
@@ -40,18 +40,22 @@ public class TaskManager {
         return savedTasks;
     }
 
-    public void saveTasks(List<Task> tasks) {
+    public void saveTasks() {
         try (BufferedWriter writer = new BufferedWriter( new FileWriter(FILE_PATH.toFile()))) {
-            for (Task task : tasks) {
-                writer.write(task.convertToJson());
-                writer.newLine();
+            writer.write("[\n");
+            for (int i = 0; i < tasks.size(); i++) {
+                writer.write(tasks.get(i).convertToJson());
+                if(i < tasks.size() - 1) {
+                    writer.write(",\n");
+                }
             }
+            writer.write("\n]");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void addTask(String description) {
+    public void addTask(String description) {
         Task newTask = new Task(description);
         tasks.add(newTask);
         System.out.println("Task Created Successfully (ID: " + newTask.getId() + ")");
@@ -80,6 +84,15 @@ public class TaskManager {
     public void markTaskAsDone(int id) {
         Task task = getTask(id);
         task.markDone();
+    }
+
+    public void listTask(String filter) {
+        for (Task task : tasks) {
+            String status = task.getStatus().toString().strip();
+            if (filter.equals("all") || status.equals(filter)) {
+                System.out.println(task.toString());
+            }
+        }
     }
 
     public Task getTask(int id) {

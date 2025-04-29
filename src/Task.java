@@ -25,6 +25,10 @@ public class Task {
         return this.id;
     }
 
+    public TaskStatus getStatus() {
+        return this.status;
+    }
+
     public void markToDo() {
         this.status = TaskStatus.TODO;
         this.updatedAt = LocalDateTime.now();
@@ -46,8 +50,8 @@ public class Task {
     }
 
     public String convertToJson() {
-        return "{\"id\": " + this.id + ", \"description\": \"" + this.description + "\", \"status\": \"" + this.status.name() + "\","
-                + "\"createdAt\": " + this.createdAt + ", \"updatedAt\": " + this.updatedAt + "}";
+        return "{\"id\": \"" + this.id + "\", \"description\": \"" + this.description + "\", \"status\": \"" + this.status.name() + "\","
+                + "\"createdAt\": \"" + this.createdAt + "\", \"updatedAt\": \"" + this.updatedAt + "\"}";
     }
 
     public static Task convertFromJson(String json) {
@@ -73,5 +77,11 @@ public class Task {
         }
 
         return task;
+    }
+
+    @Override
+    public String toString() {
+        return "id: " + id + ", description: " + description.strip() + ", status: " + status.toString() +
+                ", createdAt: " + createdAt.format(formatter) + ", updatedAt: " + updatedAt.format(formatter);
     }
 }
