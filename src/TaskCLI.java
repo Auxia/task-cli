@@ -22,26 +22,24 @@ public class TaskCLI {
             System.out.println("\tlist [argument]\t\t\t\t\tLists all tasks in the task list with filter [argument]. If [argument] not specified then displays all tasks in the task list");
             System.exit(0);
         } else if (args.length > 1 && args[0].equals("add")) {
-            String description = constructArgument(args);
-            System.out.println("Adding task: " + description);
-            taskManager.addTask(description);
+            taskManager.addTask(args[1]);
             taskManager.saveTasks();
         } else if (args.length > 1 && args[0].equals("delete")) {
-            System.out.println("Deleting task: " + args[1]);
             taskManager.removeTask(Integer.parseInt(args[1]));
             taskManager.saveTasks();
         } else if (args.length > 1 && args[0].equals("update")) {
-            String description = constructArgument(args);
-            System.out.println("Updating task: " + description);
-            taskManager.updateTask(Integer.parseInt(args[1]), description);
+            taskManager.updateTask(Integer.parseInt(args[1]), args[2]);
             taskManager.saveTasks();
         } else if (args.length > 1 && args[0].equals("mark-in-progress")) {
+            System.out.println("Marking task " + args[1] + "as in progress");
             taskManager.markTaskAsInProgress(Integer.parseInt(args[1]));
             taskManager.saveTasks();
         } else if (args.length > 1 && args[0].equals("mark-done")) {
+            System.out.println("Marking task " + args[1] + "as done");
             taskManager.markTaskAsDone(Integer.parseInt(args[1]));
             taskManager.saveTasks();
         } else if (args.length > 1 && args[0].equals("mark-todo")) {
+            System.out.println("Marking task " + args[1] + "as todo");
             taskManager.markTaskAsToDo(Integer.parseInt(args[1]));
             taskManager.saveTasks();
         }

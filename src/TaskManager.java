@@ -64,11 +64,13 @@ public class TaskManager {
     public void updateTask(int id, String newDescription) {
         Task task = getTask(id);
         task.updateDescription(newDescription);
+        System.out.println("Task Updated Successfully (ID: " + task.getId() + ")");
     }
 
     public void removeTask(int id) {
         Task task = getTask(id);
         tasks.remove(task);
+        System.out.println("Task Removed Successfully (ID: " + task.getId() + ")");
     }
 
     public void markTaskAsToDo(int id) {
