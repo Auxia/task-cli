@@ -1,4 +1,4 @@
-# How to use
+# Installation
 
 Clone the repository.
 
