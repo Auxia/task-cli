@@ -1,5 +1,7 @@
-# Installation
+# Introduction
+TaskCLI app created as practice for java OOPs and File Handling. Done as part of roadmap project: https://roadmap.sh/projects/task-tracker
 
+# Installation
 Clone the repository.
 
 ```shell
