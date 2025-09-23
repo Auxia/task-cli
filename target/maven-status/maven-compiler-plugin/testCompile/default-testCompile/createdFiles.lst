@@ -1,0 +1,4 @@
+com/taskmanager/model/TaskStatusTest.class
+com/taskmanager/cli/TaskCLITest.class
+com/taskmanager/model/TaskTest.class
+com/taskmanager/service/TaskManagerTest.class

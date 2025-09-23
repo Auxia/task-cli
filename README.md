@@ -1,7 +1,10 @@
 # Introduction
-TaskCLI app created as practice for java OOPs and File Handling. Done as part of roadmap project: https://roadmap.sh/projects/task-tracker
+
+TaskCLI app created as practice for java OOPs and File Handling. Done as part of roadmap
+project: https://roadmap.sh/projects/task-tracker
 
 # Installation
+
 Clone the repository.
 
 ```shell
@@ -10,16 +13,19 @@ cd task-cli
 ```
 
 Compile the source files.
+
 ```shell
 javac TaskCLI.java Task.java TaskManager.java TaskStatus.java
 ```
 
 Now you can run the application by using the following command.
+
 ```shell
 java TaskCLI <option> <argument>
 ```
 
 # Usage
+
 ```shell
 # Adding a new task
 java TaskCLI add "Buy groceries"
