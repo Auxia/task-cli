@@ -1,63 +1,94 @@
-# Introduction
+# Task CLI
 
-TaskCLI app created as practice for java OOPs and File Handling. Done as part of roadmap
-project: https://roadmap.sh/projects/task-tracker
+A simple command-line task management application built with Java. Add, manage, and track your tasks efficiently from the terminal.
 
-# Installation
+## Prerequisites
 
-Clone the repository.
+- Java 17 or higher
+- Maven 3.6 or higher
+
+## Installation
+
+Clone the repository and build the application:
 
 ```shell
 git clone https://github.com/Auxia/task-cli.git
 cd task-cli
+mvn clean package
 ```
 
-Compile the source files.
+## Usage
 
+### Adding a Task
 ```shell
-javac TaskCLI.java Task.java TaskManager.java TaskStatus.java
+java -jar target/task-cli.jar add "Buy groceries"
+# Output: Task added successfully (ID: 1)
 ```
 
-Now you can run the application by using the following command.
-
+### Updating a Task
 ```shell
-java TaskCLI <option> <argument>
-```
-
-# Usage
-
-```shell
-# Adding a new task
-java TaskCLI add "Buy groceries"
-# Output: Adding task: "Buy groceries"
-
-# Updating a task
-java TaskCLI update 1 "Buy groceries and cook dinner"
+java -jar target/task-cli.jar update 1 "Buy organic groceries"
 # Output: Task updated successfully (ID: 1)
-
-# Deleting a task
-java TaskCLI delete 1
-# Output: Task deleted successfully (ID: 1)
-
-# Marking a task as in progress
-java TaskCLI mark-in-progress 1
-# Output: Marking task 1 as in progress
-
-# Marking a task as done
-java TaskCLIApp mark-done 1
-# Output: Marking task 1 as done
-
-# Markign a task as todo
-java TaskCLI mark-todo 1
-# Output: Marking task 1 as todo
-
-# Listing all tasks
-java TaskCLI list
-# Output: List of all tasks
-
-# Listing tasks by status
-java TaskCLI list TODO
-java TaskCLI list IN_PROGRESS
-java TaskCLI list DONE
-
 ```
+
+### Deleting a Task
+```shell
+java -jar target/task-cli.jar delete 1
+# Output: Task deleted successfully (ID: 1)
+```
+
+### Marking Tasks
+```shell
+# Mark as in progress
+java -jar target/task-cli.jar mark-in-progress 1
+
+# Mark as done
+java -jar target/task-cli.jar mark-done 1
+
+# Mark as todo
+java -jar target/task-cli.jar mark-todo 1
+```
+
+### Listing Tasks
+```shell
+# List all tasks
+java -jar target/task-cli.jar list
+
+# List tasks by status
+java -jar target/task-cli.jar list todo
+java -jar target/task-cli.jar list in-progress
+java -jar target/task-cli.jar list done
+```
+
+### Help
+```shell
+java -jar target/task-cli.jar help
+```
+
+## Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `add` | Add a new task | `add "Study Java"` |
+| `update` | Update task description | `update 1 "Study Spring Boot"` |
+| `delete` | Delete a task | `delete 1` |
+| `mark-todo` | Mark task as TODO | `mark-todo 1` |
+| `mark-in-progress` | Mark task as IN_PROGRESS | `mark-in-progress 1` |
+| `mark-done` | Mark task as DONE | `mark-done 1` |
+| `list` | List all tasks or filter by status | `list` or `list done` |
+| `help` | Show help message | `help` |
+
+## Data Storage
+
+Tasks are automatically saved in `tasks.json` in the current directory.
+
+## Testing
+
+Run the test suite:
+```shell
+mvn test
+```
+
+---
+
+This project was created as a practice exercise for Java OOP and file handling, based on the [roadmap.sh task tracker project](https://roadmap.sh/projects/task-tracker).
