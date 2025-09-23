@@ -30,10 +30,11 @@ class TaskCLITest {
         errorStream = new ByteArrayOutputStream();
         System.setOut(new PrintStream(outputStream));
         System.setErr(new PrintStream(errorStream));
+
         // Create one TaskManager instance for the entire test
         Path testFile = tempDir.resolve("test-tasks.json");
         taskManager = new TaskManager(testFile);
-        cli = new TaskCLI();
+        cli = new TaskCLI(taskManager);
     }
 
     @AfterEach
