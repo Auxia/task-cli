@@ -1,0 +1,92 @@
+plugins {
+    id 'application'
+    id 'jacoco'
+}
+
+group = 'com.jauxia.app'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+application {
+    mainClass = 'com.taskmanager.cli.TaskCLI'
+    applicationName = 'task-cli'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Jackson for JSON handling
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2'
+
+    // Testing dependencies
+    testImplementation 'org.mockito:mockito-core:5.3.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// JaCoCo configuration matching your Maven setup
+jacoco {
+    toolVersion = '0.8.10'
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'BUNDLE'
+            limit {
+                counter = 'INSTRUCTION'
+                value = 'COVEREDRATIO'
+                minimum = 0.80 // 80% coverage minimum
+            }
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.75 // 75% branch coverage
+            }
+        }
+    }
+}
+
+// Ensure coverage verification runs after tests
+check.dependsOn jacocoTestCoverageVerification
+jacocoTestCoverageVerification.dependsOn jacocoTestReport
+
+// Configure test execution
+test {
+    useJUnitPlatform()
+    systemProperty 'file.useSystemClassLoader', 'false'
+}
+
+// Create fat JAR equivalent to Maven Shade Plugin
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.taskmanager.cli.TaskCLI'
+    }
+    archiveBaseName = 'task-cli'
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Task for easy development execution (equivalent to exec:java)
+tasks.register('runDev', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.taskmanager.cli.TaskCLI'
+    args = project.hasProperty('appArgs') ? project.property('appArgs').split('\\s+') : []
+}
