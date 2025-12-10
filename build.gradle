@@ -1,6 +1,7 @@
 plugins {
     id 'application'
     id 'jacoco'
+    id 'info.solidsoft.pitest' version '1.19.0-rc.2'
 }
 
 group = 'com.jauxia.app'
@@ -20,6 +21,8 @@ application {
 repositories {
     mavenCentral()
 }
+
+
 
 dependencies {
     // Jackson for JSON handling
@@ -84,9 +87,19 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
+pitest {
+    junit5PluginVersion = '1.0.0'
+    targetClasses = ['com.taskmanager.*']  //by default "${project.group}.*"
+    pitestVersion = '1.20.3'
+    threads = 4
+    outputFormats = ['XML', 'HTML']
+    timestampedReports = false
+}
+
 // Task for easy development execution (equivalent to exec:java)
 tasks.register('runDev', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'com.taskmanager.cli.TaskCLI'
     args = project.hasProperty('appArgs') ? project.property('appArgs').split('\\s+') : []
 }
+
