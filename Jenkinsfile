@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        jdk 'JDK21'  // Configure JDK 21 in Jenkins Global Tool Configuration
+        jdk 'JDK21'
     }
 
     environment {
@@ -39,12 +39,14 @@ pipeline {
             }
             post {
                 always {
-                    jacoco(
-                        execPattern: '**/build/jacoco/*.exec',
-                        classPattern: '**/build/classes/java/main',
-                        sourcePattern: '**/src/main/java',
-                        exclusionPattern: '**/*Test*.class'
-                    )
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'build/reports/jacoco/test/html',
+                        reportFiles: 'index.html',
+                        reportName: 'JaCoCo Coverage Report'
+                    ])
                 }
             }
         }
