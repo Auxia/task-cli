@@ -12,11 +12,11 @@ class TaskTest {
     void shouldCreateTaskWithValidParameters() {
         Task task = new Task(1, "Test task");
 
-        assertEquals(1, task.getId());
-        assertEquals("Test task", task.getDescription());
-        assertEquals(TaskStatus.TODO, task.getStatus());
-        assertNotNull(task.getCreatedAt());
-        assertNotNull(task.getUpdatedAt());
+        assertEquals(1, task.id());
+        assertEquals("Test task", task.description());
+        assertEquals(TaskStatus.TODO, task.status());
+        assertNotNull(task.createdAt());
+        assertNotNull(task.updatedAt());
     }
 
     @Test
@@ -38,36 +38,36 @@ class TaskTest {
     @DisplayName("Should trim description whitespace")
     void shouldTrimDescriptionWhitespace() {
         Task task = new Task(1, "  Test task  ");
-        assertEquals("Test task", task.getDescription());
+        assertEquals("Test task", task.description());
     }
 
     @Test
     @DisplayName("Should update description and timestamp")
     void shouldUpdateDescriptionAndTimestamp() {
         Task task = new Task(1, "Original description");
-        LocalDateTime originalUpdatedAt = task.getUpdatedAt();
+        LocalDateTime originalUpdatedAt = task.updatedAt();
 
         // Small delay to ensure timestamp difference
         try { Thread.sleep(1); } catch (InterruptedException e) {}
 
-        task.updateDescription("New description");
+        Task updated = task.updateDescription("New description");
 
-        assertEquals("New description", task.getDescription());
-        assertTrue(task.getUpdatedAt().isAfter(originalUpdatedAt));
+        assertEquals("New description", updated.description());
+        assertTrue(updated.updatedAt().isAfter(originalUpdatedAt));
     }
 
     @Test
     @DisplayName("Should update status and timestamp")
     void shouldUpdateStatusAndTimestamp() {
         Task task = new Task(1, "Test task");
-        LocalDateTime originalUpdatedAt = task.getUpdatedAt();
+        LocalDateTime originalUpdatedAt = task.updatedAt();
 
         try { Thread.sleep(1); } catch (InterruptedException e) {}
 
-        task.updateStatus(TaskStatus.IN_PROGRESS);
+        Task updated = task.updateStatus(TaskStatus.IN_PROGRESS);
 
-        assertEquals(TaskStatus.IN_PROGRESS, task.getStatus());
-        assertTrue(task.getUpdatedAt().isAfter(originalUpdatedAt));
+        assertEquals(TaskStatus.IN_PROGRESS, updated.status());
+        assertTrue(updated.updatedAt().isAfter(originalUpdatedAt));
     }
 
     @Test
@@ -95,10 +95,10 @@ class TaskTest {
         LocalDateTime now = LocalDateTime.now();
         Task task = new Task(1, "Test", TaskStatus.IN_PROGRESS, now, now);
 
-        assertEquals(1, task.getId());
-        assertEquals("Test", task.getDescription());
-        assertEquals(TaskStatus.IN_PROGRESS, task.getStatus());
-        assertEquals(now, task.getCreatedAt());
-        assertEquals(now, task.getUpdatedAt());
+        assertEquals(1, task.id());
+        assertEquals("Test", task.description());
+        assertEquals(TaskStatus.IN_PROGRESS, task.status());
+        assertEquals(now, task.createdAt());
+        assertEquals(now, task.updatedAt());
     }
 }

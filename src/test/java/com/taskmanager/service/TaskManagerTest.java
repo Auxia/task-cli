@@ -28,9 +28,9 @@ class TaskManagerTest {
         Task task = taskManager.addTask("Test task");
 
         assertNotNull(task);
-        assertEquals(1, task.getId());
-        assertEquals("Test task", task.getDescription());
-        assertEquals(TaskStatus.TODO, task.getStatus());
+        assertEquals(1, task.id());
+        assertEquals("Test task", task.description());
+        assertEquals(TaskStatus.TODO, task.status());
         assertTrue(taskManager.taskExists(1));
     }
 
@@ -40,18 +40,18 @@ class TaskManagerTest {
         Task task1 = taskManager.addTask("First task");
         Task task2 = taskManager.addTask("Second task");
 
-        assertEquals(1, task1.getId());
-        assertEquals(2, task2.getId());
+        assertEquals(1, task1.id());
+        assertEquals(2, task2.id());
     }
 
     @Test
     @DisplayName("Should update existing task")
     void shouldUpdateExistingTask() {
         Task originalTask = taskManager.addTask("Original description");
-        Task updatedTask = taskManager.updateTask(originalTask.getId(), "Updated description");
+        Task updatedTask = taskManager.updateTask(originalTask.id(), "Updated description");
 
-        assertEquals(originalTask.getId(), updatedTask.getId());
-        assertEquals("Updated description", updatedTask.getDescription());
+        assertEquals(originalTask.id(), updatedTask.id());
+        assertEquals("Updated description", updatedTask.description());
     }
 
     @Test
@@ -66,10 +66,10 @@ class TaskManagerTest {
     void shouldRemoveTaskSuccessfully() {
         Task task = taskManager.addTask("Task to remove");
 
-        Task removedTask = taskManager.removeTask(task.getId());
+        Task removedTask = taskManager.removeTask(task.id());
 
         assertEquals(task, removedTask);
-        assertFalse(taskManager.taskExists(task.getId()));
+        assertFalse(taskManager.taskExists(task.id()));
     }
 
     @Test
@@ -84,9 +84,9 @@ class TaskManagerTest {
     void shouldUpdateTaskStatus() {
         Task task = taskManager.addTask("Test task");
 
-        Task updatedTask = taskManager.updateTaskStatus(task.getId(), TaskStatus.DONE);
+        Task updatedTask = taskManager.updateTaskStatus(task.id(), TaskStatus.DONE);
 
-        assertEquals(TaskStatus.DONE, updatedTask.getStatus());
+        assertEquals(TaskStatus.DONE, updatedTask.status());
     }
 
     @Test
@@ -106,15 +106,15 @@ class TaskManagerTest {
     void shouldFilterTasksByStatus() {
         Task task1 = taskManager.addTask("Todo task");
         Task task2 = taskManager.addTask("Done task");
-        taskManager.updateTaskStatus(task2.getId(), TaskStatus.DONE);
+        taskManager.updateTaskStatus(task2.id(), TaskStatus.DONE);
 
         List<Task> todoTasks = taskManager.getTasksByStatus(TaskStatus.TODO);
         List<Task> doneTasks = taskManager.getTasksByStatus(TaskStatus.DONE);
 
         assertEquals(1, todoTasks.size());
-        assertEquals(task1.getId(), todoTasks.get(0).getId());
+        assertEquals(task1.id(), todoTasks.get(0).id());
         assertEquals(1, doneTasks.size());
-        assertEquals(task2.getId(), doneTasks.get(0).getId());
+        assertEquals(task2.id(), doneTasks.get(0).id());
     }
 
     @Test
@@ -123,7 +123,7 @@ class TaskManagerTest {
         // Add tasks and save
         Task task1 = taskManager.addTask("First task");
         Task task2 = taskManager.addTask("Second task");
-        taskManager.updateTaskStatus(task2.getId(), TaskStatus.DONE);
+        taskManager.updateTaskStatus(task2.id(), TaskStatus.DONE);
         taskManager.saveTasks();
 
         // Create new manager with same file
@@ -131,9 +131,9 @@ class TaskManagerTest {
 
         // Verify tasks are loaded
         assertEquals(2, newManager.getTaskCount());
-        assertTrue(newManager.taskExists(task1.getId()));
-        assertTrue(newManager.taskExists(task2.getId()));
-        assertEquals(TaskStatus.DONE, newManager.getTaskById(task2.getId()).getStatus());
+        assertTrue(newManager.taskExists(task1.id()));
+        assertTrue(newManager.taskExists(task2.id()));
+        assertEquals(TaskStatus.DONE, newManager.getTaskById(task2.id()).status());
     }
 
     @Test
@@ -156,7 +156,7 @@ class TaskManagerTest {
         Task task2 = taskManager.addTask("Task 2");
         assertEquals(2, taskManager.getTaskCount());
 
-        taskManager.removeTask(task2.getId());
+        taskManager.removeTask(task2.id());
         assertEquals(1, taskManager.getTaskCount());
     }
 }
