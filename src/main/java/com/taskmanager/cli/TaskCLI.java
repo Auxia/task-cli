@@ -45,7 +45,9 @@ public class TaskCLI {
         cli.addSubcommand("list", new ListCommand(tm));
 
         if (args.length == 0) {
-            cli.usage(System.out);
+            java.io.StringWriter sw = new java.io.StringWriter();
+            cli.usage(new java.io.PrintWriter(sw));
+            ROOT_LOGGER.info(sw.toString());
             return;
         }
 
@@ -60,7 +62,7 @@ public class TaskCLI {
                 wrapper.execute(args);
             } catch (Exception e) {
                 ROOT_LOGGER.error("Error executing legacy command: {}", e.getMessage());
-                System.err.println("Error: " + e.getMessage());
+                ROOT_LOGGER.error("Error: {}", e.getMessage());
                 System.exit(1);
             }
         }
@@ -102,10 +104,8 @@ public class TaskCLI {
         Task task = taskManager.addTask(description);
         taskManager.saveTasks();
 
-        // User-facing output
-        System.out.printf("Task added successfully (ID: %d)%n", task.id());
-        // Logging
-        logger.info("Added task id={}", task.id());
+        // Logging-only user-facing message
+        logger.info("Task added successfully (ID: {})", task.id());
     }
 
     private void handleUpdate(String[] args) {
@@ -119,8 +119,7 @@ public class TaskCLI {
         Task task = taskManager.updateTask(id, description);
         taskManager.saveTasks();
 
-        System.out.printf("Task updated successfully (ID: %d)%n", task.id());
-        logger.info("Updated task id={}", task.id());
+        logger.info("Task updated successfully (ID: {})", task.id());
     }
 
     private void handleDelete(String[] args) {
@@ -132,8 +131,7 @@ public class TaskCLI {
         Task task = taskManager.removeTask(id);
         taskManager.saveTasks();
 
-        System.out.printf("Task deleted successfully (ID: %d)%n", task.id());
-        logger.info("Deleted task id={}", task.id());
+        logger.info("Task deleted successfully (ID: {})", task.id());
     }
 
     private void handleMarkStatus(String[] args, TaskStatus status) {
@@ -145,7 +143,7 @@ public class TaskCLI {
         Task task = taskManager.updateTaskStatus(id, status);
         taskManager.saveTasks();
 
-        System.out.printf("Task %d marked as %s%n", task.id(), status.getDisplayName());
+        logger.info("Task {} marked as {}", task.id(), status.getDisplayName());
         logger.info("Task {} status changed to {}", task.id(), status.name());
     }
 
@@ -167,7 +165,7 @@ public class TaskCLI {
         tasks.stream()
                 .sorted((t1, t2) -> Integer.compare(t1.id(), t2.id()))
                 .forEach(task -> {
-                    System.out.printf("%d. [%s] %s%n", task.id(), task.status().getDisplayName(), task.description());
+                    logger.info("{}. [{}] {}", task.id(), task.status().getDisplayName(), task.description());
                     logger.debug("Listing task id={} status={} desc={}", task.id(), task.status().name(), task.description());
                 });
     }
@@ -226,7 +224,7 @@ public class TaskCLI {
             String description = String.join(" ", descriptionParts);
             Task task = taskManager.addTask(description);
             taskManager.saveTasks();
-            System.out.printf("Task added successfully (ID: %d)%n", task.id());
+            LoggerFactory.getLogger(AddCommand.class).info("Task added successfully (ID: {})", task.id());
             LoggerFactory.getLogger(AddCommand.class).info("Added task id={}", task.id());
             return 0;
         }
@@ -249,7 +247,7 @@ public class TaskCLI {
             String description = String.join(" ", descriptionParts);
             Task task = taskManager.updateTask(id, description);
             taskManager.saveTasks();
-            System.out.printf("Task updated successfully (ID: %d)%n", task.id());
+            LoggerFactory.getLogger(UpdateCommand.class).info("Task updated successfully (ID: {})", task.id());
             LoggerFactory.getLogger(UpdateCommand.class).info("Updated task id={}", task.id());
             return 0;
         }
@@ -268,7 +266,7 @@ public class TaskCLI {
         public Integer call() {
             Task task = taskManager.removeTask(id);
             taskManager.saveTasks();
-            System.out.printf("Task deleted successfully (ID: %d)%n", task.id());
+            LoggerFactory.getLogger(DeleteCommand.class).info("Task deleted successfully (ID: {})", task.id());
             LoggerFactory.getLogger(DeleteCommand.class).info("Deleted task id={}", task.id());
             return 0;
         }
@@ -294,7 +292,7 @@ public class TaskCLI {
             }
 
             if (tasks.isEmpty()) {
-                System.out.println("No tasks found.");
+                LoggerFactory.getLogger(ListCommand.class).info("No tasks found.");
                 LoggerFactory.getLogger(ListCommand.class).info("No tasks to display");
                 return 0;
             }
@@ -302,7 +300,7 @@ public class TaskCLI {
             tasks.stream()
                     .sorted((t1, t2) -> Integer.compare(t1.id(), t2.id()))
                     .forEach(task -> {
-                        System.out.printf("%d. [%s] %s%n", task.id(), task.status().getDisplayName(), task.description());
+                        LoggerFactory.getLogger(ListCommand.class).info("{}. [{}] {}", task.id(), task.status().getDisplayName(), task.description());
                         LoggerFactory.getLogger(ListCommand.class).debug("Listing task id={} status={} desc={}", task.id(), task.status().name(), task.description());
                     });
             return 0;
@@ -318,7 +316,7 @@ public class TaskCLI {
         @Override public Integer call() {
             Task task = taskManager.updateTaskStatus(id, TaskStatus.TODO);
             taskManager.saveTasks();
-            System.out.printf("Task %d marked as %s%n", task.id(), task.status().getDisplayName());
+            LoggerFactory.getLogger(MarkTodoCommand.class).info("Task {} marked as {}", task.id(), task.status().getDisplayName());
             LoggerFactory.getLogger(MarkTodoCommand.class).info("Task {} marked as {}", task.id(), task.status().name());
             return 0;
         }
@@ -333,7 +331,7 @@ public class TaskCLI {
         @Override public Integer call() {
             Task task = taskManager.updateTaskStatus(id, TaskStatus.IN_PROGRESS);
             taskManager.saveTasks();
-            System.out.printf("Task %d marked as %s%n", task.id(), task.status().getDisplayName());
+            LoggerFactory.getLogger(MarkInProgressCommand.class).info("Task {} marked as {}", task.id(), task.status().getDisplayName());
             LoggerFactory.getLogger(MarkInProgressCommand.class).info("Task {} marked as {}", task.id(), task.status().name());
             return 0;
         }
@@ -348,7 +346,7 @@ public class TaskCLI {
         @Override public Integer call() {
             Task task = taskManager.updateTaskStatus(id, TaskStatus.DONE);
             taskManager.saveTasks();
-            System.out.printf("Task %d marked as %s%n", task.id(), task.status().getDisplayName());
+            LoggerFactory.getLogger(MarkDoneCommand.class).info("Task {} marked as {}", task.id(), task.status().getDisplayName());
             LoggerFactory.getLogger(MarkDoneCommand.class).info("Task {} marked as {}", task.id(), task.status().name());
             return 0;
         }
