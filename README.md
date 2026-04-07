@@ -1,15 +1,15 @@
 # Task CLI
 
-A simple command-line task management application built with Java. Add, manage, and track your tasks efficiently from the terminal.
+A small command-line task manager written in modern Java. This project was migrated to Maven, modernized (immutable model, thread-safe service, Picocli CLI, SLF4J logging) and packaged as a single runnable shaded JAR.
 
 ## Prerequisites
 
-- Java 17 or higher
+- Java 25 (JRE/JDK) or higher
 - Maven 3.6 or higher
 
-## Installation
+## Build
 
-Clone the repository and build the application:
+Clone and build the project with Maven:
 
 ```shell
 git clone https://github.com/Auxia/task-cli.git
@@ -17,78 +17,83 @@ cd task-cli
 mvn clean package
 ```
 
+A shaded, runnable JAR is produced at:
+
+```
+target/task-cli-1.0.0-shaded.jar
+```
+
 ## Usage
 
-### Adding a Task
+This CLI uses Picocli subcommands. Output is emitted via SLF4J (Logback) at INFO level by default.
+
+Examples (run commands against the shaded JAR):
+
+- Add a task
+  ```shell
+  java -jar target/task-cli-1.0.0-shaded.jar add "Buy groceries"
+  ```
+
+- Update a task
+  ```shell
+  java -jar target/task-cli-1.0.0-shaded.jar update 1 "Buy organic groceries"
+  ```
+
+- Delete a task
+  ```shell
+  java -jar target/task-cli-1.0.0-shaded.jar delete 1
+  ```
+
+- Change status
+  ```shell
+  java -jar target/task-cli-1.0.0-shaded.jar mark-in-progress 1
+  java -jar target/task-cli-1.0.0-shaded.jar mark-done 1
+  java -jar target/task-cli-1.0.0-shaded.jar mark-todo 1
+  ```
+
+- List tasks (optionally filter by status: todo, in-progress, done)
+  ```shell
+  java -jar target/task-cli-1.0.0-shaded.jar list
+  java -jar target/task-cli-1.0.0-shaded.jar list done
+  ```
+
+- Show help
+  ```shell
+  java -jar target/task-cli-1.0.0-shaded.jar --help
+  ```
+
+## Configuration
+
+- Tasks file path: by default tasks are stored in `tasks.json` in the working directory.
+  Override with the environment variable `TASKS_FILE` or the system property `-Dtasks.file=path/to/file.json`.
+
+- Logging: the app uses SLF4J with Logback (logback-classic). Add a `logback.xml` to `src/main/resources` or supply one on the classpath to customize formatting/levels. By default INFO-level messages are printed to the console.
+
+## Docker
+
+A simple Dockerfile is included. Build and run:
+
 ```shell
-java -jar target/task-cli.jar add "Buy groceries"
-# Output: Task added successfully (ID: 1)
+mvn package
+docker build -t task-cli:1.0.0 .
+# Persist tasks by mounting a volume for tasks.json
+docker run --rm -v $(pwd)/tasks.json:/app/tasks.json task-cli:1.0.0 list
 ```
-
-### Updating a Task
-```shell
-java -jar target/task-cli.jar update 1 "Buy organic groceries"
-# Output: Task updated successfully (ID: 1)
-```
-
-### Deleting a Task
-```shell
-java -jar target/task-cli.jar delete 1
-# Output: Task deleted successfully (ID: 1)
-```
-
-### Marking Tasks
-```shell
-# Mark as in progress
-java -jar target/task-cli.jar mark-in-progress 1
-
-# Mark as done
-java -jar target/task-cli.jar mark-done 1
-
-# Mark as todo
-java -jar target/task-cli.jar mark-todo 1
-```
-
-### Listing Tasks
-```shell
-# List all tasks
-java -jar target/task-cli.jar list
-
-# List tasks by status
-java -jar target/task-cli.jar list todo
-java -jar target/task-cli.jar list in-progress
-java -jar target/task-cli.jar list done
-```
-
-### Help
-```shell
-java -jar target/task-cli.jar help
-```
-
-## Commands
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `add` | Add a new task | `add "Study Java"` |
-| `update` | Update task description | `update 1 "Study Spring Boot"` |
-| `delete` | Delete a task | `delete 1` |
-| `mark-todo` | Mark task as TODO | `mark-todo 1` |
-| `mark-in-progress` | Mark task as IN_PROGRESS | `mark-in-progress 1` |
-| `mark-done` | Mark task as DONE | `mark-done 1` |
-| `list` | List all tasks or filter by status | `list` or `list done` |
-| `help` | Show help message | `help` |
-
-## Data Storage
-
-Tasks are automatically saved in `tasks.json` in the current directory.
 
 ## Testing
 
-Run the test suite:
+Run unit tests locally:
+
 ```shell
 mvn test
 ```
 
+## Notes & Next steps
+
+- The CLI is implemented with Picocli subcommands (add/update/delete/list/mark-*).
+- Output is controlled via logging; if you prefer plain stdout messaging the behavior can be adjusted.
+- Consider adding a `logback.xml` to set a user-friendly console pattern and log level, or enable file-based logging.
+
 ---
 
-This project was created as a practice exercise for Java OOP and file handling, based on the [roadmap.sh task tracker project](https://roadmap.sh/projects/task-tracker).
+This project was originally based on the [roadmap.sh task tracker project](https://roadmap.sh/projects/task-tracker).
