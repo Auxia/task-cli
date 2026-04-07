@@ -42,8 +42,12 @@ public class TaskManager {
     static Path validatePath(Path path) {
         Path normalized = path.normalize();
         if (!path.isAbsolute()) {
-            Path workDir = Path.of("").toAbsolutePath();
-            if (!normalized.toAbsolutePath().startsWith(workDir)) {
+            // toAbsolutePath() preserves ".." components — normalize() is required after
+            // to collapse them before comparing, otherwise "../../etc/passwd" would pass
+            // the startsWith check against the working directory.
+            Path workDir = Path.of("").toAbsolutePath().normalize();
+            Path resolvedNormalized = normalized.toAbsolutePath().normalize();
+            if (!resolvedNormalized.startsWith(workDir)) {
                 throw new IllegalArgumentException(
                     "Task file path must not traverse above the working directory: " + path);
             }
