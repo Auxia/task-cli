@@ -16,7 +16,7 @@ import java.util.concurrent.Callable;
 
 @Command(name = "task-cli", mixinStandardHelpOptions = true, description = "Task CLI - Task Management Application")
 public class TaskCLI {
-    private final Logger logger = LoggerFactory.getLogger(TaskCLI.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskCLI.class);
     private final TaskManager taskManager;
 
     public TaskCLI() {
@@ -159,7 +159,7 @@ public class TaskCLI {
         }
 
         if (tasks.isEmpty()) {
-            logger.info("No tasks found");
+            System.out.println("No tasks found.");
             return;
         }
 
