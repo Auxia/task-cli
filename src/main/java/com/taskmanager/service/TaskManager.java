@@ -10,8 +10,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -25,7 +23,7 @@ public class TaskManager {
     private final Path filePath;
     private final ObjectMapper objectMapper;
     private final Map<Integer, Task> tasks;
-    private final AtomicInteger nextId;
+    private int nextId;
 
     public TaskManager() {
         this(resolvePathFromConfig());
@@ -59,8 +57,8 @@ public class TaskManager {
         Objects.requireNonNull(filePath, "File path cannot be null");
         this.filePath = validatePath(filePath);
         this.objectMapper = createObjectMapper();
-        this.tasks = new ConcurrentHashMap<>();
-        this.nextId = new AtomicInteger(1);
+        this.tasks = new LinkedHashMap<>();
+        this.nextId = 1;
         loadTasks();
     }
 
@@ -87,7 +85,7 @@ public class TaskManager {
 
             for (Task task : loadedTasks) {
                 tasks.put(task.id(), task);
-                nextId.set(Math.max(nextId.get(), task.id() + 1));
+                nextId = Math.max(nextId, task.id() + 1);
             }
             logger.info("Loaded {} tasks from {}", tasks.size(), filePath);
         } catch (IOException e) {
@@ -126,7 +124,7 @@ public class TaskManager {
     }
 
     public Task addTask(String description) {
-        Task task = new Task(nextId.getAndIncrement(), description);
+        Task task = new Task(nextId++, description);
         tasks.put(task.id(), task);
         return task;
     }
