@@ -5,80 +5,52 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-public class Task {
-    private final int id;
-    private String description;
-    private TaskStatus status;
-    private final LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+// Immutable record-based Task (modernized). Provides convenience update methods that return new Task instances.
+public record Task(
+        int id,
+        String description,
+        TaskStatus status,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) {
+    public Task {
+        if (id <= 0) throw new IllegalArgumentException("Task ID must be positive");
+        if (description == null) throw new IllegalArgumentException("Task description cannot be null or empty");
+        description = description.trim();
+        if (description.isEmpty()) throw new IllegalArgumentException("Task description cannot be null or empty");
+        Objects.requireNonNull(status, "Status cannot be null");
+        Objects.requireNonNull(createdAt, "Created date cannot be null");
+        Objects.requireNonNull(updatedAt, "Updated date cannot be null");
+    }
 
+    // Convenience constructor for creating a new task
     public Task(int id, String description) {
-        this.id = validateId(id);
-        this.description = validateDescription(description);
-        this.status = TaskStatus.TODO;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        // Delegate to canonical constructor which performs validation (including null/empty check)
+        this(id, description, TaskStatus.TODO, LocalDateTime.now(), LocalDateTime.now());
     }
 
-    @JsonCreator
-    public Task(@JsonProperty("id") int id,
-                @JsonProperty("description") String description,
-                @JsonProperty("status") TaskStatus status,
-                @JsonProperty("createdAt") LocalDateTime createdAt,
-                @JsonProperty("updatedAt") LocalDateTime updatedAt) {
-        this.id = validateId(id);
-        this.description = validateDescription(description);
-        this.status = Objects.requireNonNull(status, "Status cannot be null");
-        this.createdAt = Objects.requireNonNull(createdAt, "Created date cannot be null");
-        this.updatedAt = Objects.requireNonNull(updatedAt, "Updated date cannot be null");
+
+    public Task updateDescription(String newDescription) {
+        String desc = (newDescription == null) ? null : newDescription.trim();
+        if (desc == null || desc.isEmpty()) throw new IllegalArgumentException("Task description cannot be null or empty");
+        return new Task(this.id, desc, this.status, this.createdAt, LocalDateTime.now());
     }
 
-    private int validateId(int id) {
-        if (id <= 0) {
-            throw new IllegalArgumentException("Task ID must be positive");
-        }
-        return id;
+    public Task updateStatus(TaskStatus newStatus) {
+        Objects.requireNonNull(newStatus, "Status cannot be null");
+        return new Task(this.id, this.description, newStatus, this.createdAt, LocalDateTime.now());
     }
 
-    private String validateDescription(String description) {
-        if (description == null || description.trim().isEmpty()) {
-            throw new IllegalArgumentException("Task description cannot be null or empty");
-        }
-        return description.trim();
-    }
-
-    public int getId() { return id; }
-    public String getDescription() { return description; }
-    public TaskStatus getStatus() { return status; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-
-    public void updateDescription(String newDescription) {
-        this.description = validateDescription(newDescription);
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public void updateStatus(TaskStatus newStatus) {
-        this.status = Objects.requireNonNull(newStatus, "Status cannot be null");
-        this.updatedAt = LocalDateTime.now();
-    }
-
+    // Keep equality semantics based on id only to match previous behavior and tests
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Task)) return false;
-        Task task = (Task) o;
-        return id == task.id;
+        if (!(o instanceof Task t)) return false;
+        return this.id == t.id;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(id);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Task{id=%d, description='%s', status=%s, created=%s, updated=%s}",
-                id, description, status, createdAt, updatedAt);
     }
 }
