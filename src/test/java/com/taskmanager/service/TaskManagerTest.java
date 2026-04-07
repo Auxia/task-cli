@@ -159,4 +159,45 @@ class TaskManagerTest {
         taskManager.removeTask(task2.id());
         assertEquals(1, taskManager.getTaskCount());
     }
+
+    // Security: path traversal (issue #5)
+
+    @Test
+    @DisplayName("Should reject relative path that traverses above working directory")
+    void shouldRejectRelativePathTraversal() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new TaskManager(Path.of("../../etc/passwd")));
+    }
+
+    @Test
+    @DisplayName("Should reject relative path with traversal embedded mid-path")
+    void shouldRejectEmbeddedTraversal() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new TaskManager(Path.of("data/../../etc/shadow")));
+    }
+
+    @Test
+    @DisplayName("Should accept absolute path")
+    void shouldAcceptAbsolutePath(@TempDir Path dir) {
+        Path absolute = dir.resolve("tasks.json");
+        assertDoesNotThrow(() -> new TaskManager(absolute));
+    }
+
+    @Test
+    @DisplayName("Should accept relative path within working directory")
+    void shouldAcceptRelativePathInWorkingDirectory() {
+        // A plain filename stays within the working directory
+        assertDoesNotThrow(() -> TaskManager.validatePath(Path.of("tasks.json")));
+    }
+
+    @Test
+    @DisplayName("Should reject path traversal via tasks.file system property")
+    void shouldRejectPathTraversalViaSystemProperty() {
+        System.setProperty("tasks.file", "../../etc/passwd");
+        try {
+            assertThrows(IllegalArgumentException.class, TaskManager::new);
+        } finally {
+            System.clearProperty("tasks.file");
+        }
+    }
 }

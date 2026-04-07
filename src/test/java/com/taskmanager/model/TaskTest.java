@@ -101,4 +101,20 @@ class TaskTest {
         assertEquals(now, task.createdAt());
         assertEquals(now, task.updatedAt());
     }
+
+    // Security: description length limit (issue #14)
+
+    @Test
+    @DisplayName("Should reject description exceeding max length")
+    void shouldRejectDescriptionExceedingMaxLength() {
+        String tooLong = "a".repeat(Task.MAX_DESCRIPTION_LENGTH + 1);
+        assertThrows(IllegalArgumentException.class, () -> new Task(1, tooLong));
+    }
+
+    @Test
+    @DisplayName("Should accept description exactly at max length")
+    void shouldAcceptDescriptionAtMaxLength() {
+        String atLimit = "a".repeat(Task.MAX_DESCRIPTION_LENGTH);
+        assertDoesNotThrow(() -> new Task(1, atLimit));
+    }
 }

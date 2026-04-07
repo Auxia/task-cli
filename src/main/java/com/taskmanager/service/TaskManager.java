@@ -33,14 +33,31 @@ public class TaskManager {
 
     private static Path resolvePathFromConfig() {
         String prop = System.getProperty("tasks.file");
-        if (prop != null && !prop.isBlank()) return Path.of(prop);
+        if (prop != null && !prop.isBlank()) return validatePath(Path.of(prop));
         String env = System.getenv("TASKS_FILE");
-        if (env != null && !env.isBlank()) return Path.of(env);
+        if (env != null && !env.isBlank()) return validatePath(Path.of(env));
         return Path.of(DEFAULT_TASKS_FILE);
     }
 
+    static Path validatePath(Path path) {
+        Path normalized = path.normalize();
+        if (!path.isAbsolute()) {
+            // toAbsolutePath() preserves ".." components — normalize() is required after
+            // to collapse them before comparing, otherwise "../../etc/passwd" would pass
+            // the startsWith check against the working directory.
+            Path workDir = Path.of("").toAbsolutePath().normalize();
+            Path resolvedNormalized = normalized.toAbsolutePath().normalize();
+            if (!resolvedNormalized.startsWith(workDir)) {
+                throw new IllegalArgumentException(
+                    "Task file path must not traverse above the working directory: " + path);
+            }
+        }
+        return normalized;
+    }
+
     public TaskManager(Path filePath) {
-        this.filePath = Objects.requireNonNull(filePath, "File path cannot be null");
+        Objects.requireNonNull(filePath, "File path cannot be null");
+        this.filePath = validatePath(filePath);
         this.objectMapper = createObjectMapper();
         this.tasks = new ConcurrentHashMap<>();
         this.nextId = new AtomicInteger(1);
