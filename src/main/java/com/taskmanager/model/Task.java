@@ -46,7 +46,17 @@ public record Task(
         return new Task(this.id, this.description, newStatus, this.createdAt, LocalDateTime.now());
     }
 
-    // Keep equality semantics based on id only to match previous behavior and tests
+    /**
+     * Equality is intentionally based on ID only.
+     *
+     * Two {@code Task} instances with the same ID represent the same task entity
+     * regardless of their current field values — this mirrors how tasks are stored
+     * and looked up (keyed by ID in {@code TaskManager}). This is entity identity,
+     * not value equality.
+     *
+     * Consequence: a {@code Set<Task>} enforces ID uniqueness, not field-level uniqueness.
+     * Do not use {@code equals} to detect whether a task has been updated.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
