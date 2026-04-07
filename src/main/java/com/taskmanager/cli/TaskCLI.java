@@ -16,8 +16,7 @@ import java.util.concurrent.Callable;
 
 @Command(name = "task-cli", mixinStandardHelpOptions = true, description = "Task CLI - Task Management Application")
 public class TaskCLI {
-    private static final Logger ROOT_LOGGER = LoggerFactory.getLogger(TaskCLI.class);
-    private final Logger logger = LoggerFactory.getLogger(TaskCLI.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskCLI.class);
     private final TaskManager taskManager;
 
     public TaskCLI() {
@@ -59,7 +58,7 @@ public class TaskCLI {
             try {
                 wrapper.execute(args);
             } catch (Exception e) {
-                ROOT_LOGGER.error("Error executing legacy command: {}", e.getMessage());
+                logger.error("Error executing legacy command: {}", e.getMessage());
                 System.err.println("Error: " + e.getMessage());
                 System.exit(1);
             }
@@ -160,7 +159,7 @@ public class TaskCLI {
         }
 
         if (tasks.isEmpty()) {
-            logger.info("No tasks found");
+            System.out.println("No tasks found.");
             return;
         }
 
