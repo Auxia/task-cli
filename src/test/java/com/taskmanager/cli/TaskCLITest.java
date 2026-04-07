@@ -3,6 +3,8 @@ package com.taskmanager.cli;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +25,8 @@ class TaskCLITest {
     private TaskManager taskManager;
     private TestLogAppender appender;
     private Logger rootLogger;
+    private ByteArrayOutputStream capturedOut;
+    private PrintStream originalOut;
 
     static class TestLogAppender extends AppenderBase<ILoggingEvent> {
         private final List<ILoggingEvent> events = new java.util.ArrayList<>();
@@ -38,6 +42,11 @@ class TaskCLITest {
 
     @BeforeEach
     void setUp() {
+        // Capture System.out so tests can assert on console messages
+        originalOut = System.out;
+        capturedOut = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(capturedOut));
+
         // Create one TaskManager instance for the entire test
         Path testFile = tempDir.resolve("test-tasks.json");
         taskManager = new TaskManager(testFile);
@@ -52,6 +61,7 @@ class TaskCLITest {
 
     @AfterEach
     void tearDown() {
+        System.setOut(originalOut);
         if (rootLogger != null && appender != null) {
             rootLogger.detachAppender(appender);
             appender.stop();
@@ -60,6 +70,14 @@ class TaskCLITest {
 
     private String getLogOutput() {
         return String.join("\n", appender.getMessages());
+    }
+
+    private String getConsoleOutput() {
+        return capturedOut.toString();
+    }
+
+    private void clearConsoleOutput() {
+        capturedOut.reset();
     }
 
     @Test
@@ -172,12 +190,10 @@ class TaskCLITest {
     @Test
     @DisplayName("Should handle empty task list")
     void shouldHandleEmptyTaskList() {
-        appender.clear();
         cli.execute(new String[]{"list"});
 
-        String output = getLogOutput();
-        assertTrue(output.contains("No tasks found"),
-                "Expected 'No tasks found' message but got: " + output);
+        assertTrue(getConsoleOutput().contains("No tasks found"),
+                "Expected 'No tasks found' message on stdout but got: " + getConsoleOutput());
     }
 
     @Test
@@ -290,26 +306,25 @@ class TaskCLITest {
     void shouldMaintainTaskCountCorrectly() {
         // Initially no tasks
         cli.execute(new String[]{"list"});
-        String output = getLogOutput();
-        assertTrue(output.contains("No tasks found"));
+        assertTrue(getConsoleOutput().contains("No tasks found"));
 
         // Add two tasks
         cli.execute(new String[]{"add", "Task", "1"});
         cli.execute(new String[]{"add", "Task", "2"});
-        appender.clear();
+        clearConsoleOutput();
 
         cli.execute(new String[]{"list"});
-        output = getLogOutput();
-        assertTrue(output.contains("Task 1") || output.contains("Task 1"));
-        assertTrue(output.contains("Task 2") || output.contains("Task 2"));
+        String afterAdd = getConsoleOutput();
+        assertTrue(afterAdd.contains("Task 1"));
+        assertTrue(afterAdd.contains("Task 2"));
 
         // Delete one task
         cli.execute(new String[]{"delete", "1"});
-        appender.clear();
+        clearConsoleOutput();
 
         cli.execute(new String[]{"list"});
-        output = getLogOutput();
-        assertFalse(output.contains("Task 1"));
-        assertTrue(output.contains("Task 2"));
+        String afterDelete = getConsoleOutput();
+        assertFalse(afterDelete.contains("1. [todo] Task 1"));
+        assertTrue(afterDelete.contains("Task 2"));
     }
 }

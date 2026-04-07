@@ -3,6 +3,10 @@ package com.taskmanager.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public enum TaskStatus {
     TODO("todo", "TODO"),
     IN_PROGRESS("in-progress", "IN_PROGRESS"),
@@ -10,6 +14,12 @@ public enum TaskStatus {
 
     private final String displayName;
     private final String jsonValue;
+
+    private static final Map<String, TaskStatus> BY_JSON_VALUE = Arrays.stream(values())
+            .collect(Collectors.toUnmodifiableMap(s -> s.jsonValue, s -> s));
+
+    private static final Map<String, TaskStatus> BY_DISPLAY_NAME = Arrays.stream(values())
+            .collect(Collectors.toUnmodifiableMap(s -> s.displayName, s -> s));
 
     TaskStatus(String displayName, String jsonValue) {
         this.displayName = displayName;
@@ -27,20 +37,14 @@ public enum TaskStatus {
 
     @JsonCreator
     public static TaskStatus fromJsonValue(String value) {
-        for (TaskStatus status : values()) {
-            if (status.jsonValue.equals(value)) {
-                return status;
-            }
-        }
-        throw new IllegalArgumentException("Unknown status: " + value);
+        TaskStatus status = BY_JSON_VALUE.get(value);
+        if (status == null) throw new IllegalArgumentException("Unknown status: " + value);
+        return status;
     }
 
     public static TaskStatus fromDisplayName(String displayName) {
-        for (TaskStatus status : values()) {
-            if (status.displayName.equalsIgnoreCase(displayName)) {
-                return status;
-            }
-        }
-        throw new IllegalArgumentException("Unknown status: " + displayName);
+        TaskStatus status = BY_DISPLAY_NAME.get(displayName.toLowerCase());
+        if (status == null) throw new IllegalArgumentException("Unknown status: " + displayName);
+        return status;
     }
 }
