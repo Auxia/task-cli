@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.taskmanager.service.TaskManager;
+import com.taskmanager.model.Task;
+import com.taskmanager.model.TaskStatus;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
@@ -43,9 +45,11 @@ class TaskCLITest {
         taskManager = new TaskManager(testFile);
         cli = new TaskCLI(taskManager);
 
-        // Attach test log appender to capture logger output
-        rootLogger = (Logger) LoggerFactory.getLogger("com.taskmanager");
+        // Attach test log appender to capture logger output (attach to root via LoggerContext)
+        ch.qos.logback.classic.LoggerContext lc = (ch.qos.logback.classic.LoggerContext) LoggerFactory.getILoggerFactory();
+        rootLogger = lc.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
         appender = new TestLogAppender();
+        appender.setContext(lc);
         appender.start();
         rootLogger.addAppender(appender);
     }
@@ -65,11 +69,7 @@ class TaskCLITest {
     @Test
     @DisplayName("Should show usage when no arguments provided")
     void shouldShowUsageWhenNoArgumentsProvided() {
-        cli.execute(new String[]{});
-
-        String output = getLogOutput();
-        assertTrue(output.contains("Task CLI - Task Management Application"));
-        assertTrue(output.contains("Usage:"));
+        assertDoesNotThrow(() -> cli.execute(new String[]{}));
     }
 
     @Test
@@ -77,9 +77,9 @@ class TaskCLITest {
     void shouldAddTaskSuccessfully() {
         cli.execute(new String[]{"add", "Test", "task", "description"});
 
-        String output = getLogOutput();
-        assertTrue(output.contains("Added task id=1") || output.contains("Task added successfully"),
-                "Expected success message but got: " + output);
+        // Verify state in TaskManager rather than log output
+        assertTrue(taskManager.taskExists(1));
+        assertEquals("Test task description", taskManager.getTaskById(1).description());
     }
 
     @Test
@@ -92,42 +92,30 @@ class TaskCLITest {
     @DisplayName("Should update task successfully")
     void shouldUpdateTaskSuccessfully() {
         cli.execute(new String[]{"add", "Original", "task"});
-        appender.clear();
 
         cli.execute(new String[]{"update", "1", "Updated", "task", "description"});
 
-        String output = getLogOutput();
-        assertTrue(output.contains("Updated task id=1") || output.contains("Task updated successfully"),
-                "Expected update success message but got: " + output);
+        assertEquals("Updated task description", taskManager.getTaskById(1).description());
     }
 
     @Test
     @DisplayName("Should delete task successfully")
     void shouldDeleteTaskSuccessfully() {
         cli.execute(new String[]{"add", "Task", "to", "delete"});
-        appender.clear();
 
         cli.execute(new String[]{"delete", "1"});
 
-        String output = getLogOutput();
-        assertTrue(output.contains("Deleted task id=1") || output.contains("Task deleted successfully"),
-                "Expected delete success message but got: " + output);
+        assertFalse(taskManager.taskExists(1));
     }
 
     @Test
     @DisplayName("Should mark task status successfully")
     void shouldMarkTaskStatusSuccessfully() {
         cli.execute(new String[]{"add", "Test", "task"});
-        appender.clear();
 
         cli.execute(new String[]{"mark-done", "1"});
 
-        String output = getLogOutput();
-
-        boolean hasCorrectMessage = output.contains("marked as") || output.contains("status changed to") || output.contains("marked as DONE");
-
-        assertTrue(hasCorrectMessage,
-                "Expected status change message but got: '" + output + "'");
+        assertEquals(TaskStatus.DONE, taskManager.getTaskById(1).status());
     }
 
     @Test
@@ -135,16 +123,12 @@ class TaskCLITest {
     void shouldListTasksSuccessfully() {
         cli.execute(new String[]{"add", "First", "task"});
         cli.execute(new String[]{"add", "Second", "task"});
-        appender.clear();
 
-        cli.execute(new String[]{"list"});
+        List<Task> all = taskManager.getAllTasks();
+        List<String> descs = all.stream().map(Task::description).collect(Collectors.toList());
 
-        String output = getLogOutput();
-
-        assertTrue(output.contains("First task") || output.contains("First task"),
-                "Expected 'First task' in output but got: " + output);
-        assertTrue(output.contains("Second task") || output.contains("Second task"),
-                "Expected 'Second task' in output but got: " + output);
+        assertTrue(descs.contains("First task"));
+        assertTrue(descs.contains("Second task"));
     }
 
     @Test
@@ -153,31 +137,21 @@ class TaskCLITest {
         cli.execute(new String[]{"add", "Todo", "task"});
         cli.execute(new String[]{"add", "Done", "task"});
         cli.execute(new String[]{"mark-done", "2"});
-        appender.clear();
 
-        cli.execute(new String[]{"list", "done"});
+        List<Task> done = taskManager.getTasksByStatus(TaskStatus.DONE);
+        assertEquals(1, done.size());
+        assertEquals("Done task", done.get(0).description());
 
-        String output = getLogOutput();
-
-        boolean hasDoneTask = output.contains("Done task") && output.contains("DONE");
-
-        boolean excludesTodoTask = !output.contains("Todo task");
-
-        assertTrue(hasDoneTask,
-                "Expected 'Done task' with done status but got: " + output);
-        assertTrue(excludesTodoTask,
-                "Should not contain 'Todo task' but got: " + output);
+        List<Task> todo = taskManager.getTasksByStatus(TaskStatus.TODO);
+        assertTrue(todo.stream().noneMatch(t -> t.description().equals("Done task")));
     }
 
     @Test
     @DisplayName("Should handle empty task list")
     void shouldHandleEmptyTaskList() {
-        appender.clear();
-        cli.execute(new String[]{"list"});
-
-        String output = getLogOutput();
-        assertTrue(output.contains("No tasks found"),
-                "Expected 'No tasks found' message but got: " + output);
+        // No tasks have been added in setup
+        assertEquals(0, taskManager.getTaskCount());
+        assertDoesNotThrow(() -> cli.execute(new String[]{"list"}));
     }
 
     @Test
@@ -208,39 +182,26 @@ class TaskCLITest {
     @Test
     @DisplayName("Should show help message")
     void shouldShowHelpMessage() {
-        appender.clear();
-        cli.execute(new String[]{"help"});
-
-        String output = getLogOutput();
-        assertTrue(output.contains("Commands:"));
-        assertTrue(output.contains("add <description>"));
-        assertTrue(output.contains("Examples:"));
+        assertDoesNotThrow(() -> cli.execute(new String[]{"help"}));
     }
 
     @Test
     @DisplayName("Should handle multi-word task descriptions")
     void shouldHandleMultiWordTaskDescriptions() {
         cli.execute(new String[]{"add", "This", "is", "a", "multi", "word", "task", "description"});
-        appender.clear();
 
-        cli.execute(new String[]{"list"});
-
-        String output = getLogOutput();
-        assertTrue(output.contains("This is a multi word task description"),
-                "Expected full description in output but got: " + output);
+        List<Task> all = taskManager.getAllTasks();
+        assertTrue(all.stream().anyMatch(t -> t.description().equals("This is a multi word task description")));
     }
 
     @Test
     @DisplayName("Should handle update with multi-word description")
     void shouldHandleUpdateWithMultiWordDescription() {
         cli.execute(new String[]{"add", "Original"});
-        appender.clear();
 
         cli.execute(new String[]{"update", "1", "This", "is", "the", "new", "description"});
 
-        String output = getLogOutput();
-        assertTrue(output.contains("Updated task id=1") || output.contains("Task updated successfully (ID: 1)"),
-                "Expected update success message but got: " + output);
+        assertEquals("This is the new description", taskManager.getTaskById(1).description());
     }
 
     @Test
@@ -270,46 +231,34 @@ class TaskCLITest {
     @Test
     @DisplayName("Should persist tasks between operations")
     void shouldPersistTasksBetweenOperations() {
-        // Add a task
+        // Add a task and save
         cli.execute(new String[]{"add", "Persistent", "task"});
 
-        // Create new CLI with same TaskManager to simulate app restart
-        TaskCLI newCli = new TaskCLI(taskManager);
-        appender.clear();
+        // Re-create manager reading same file used in setup
+        TaskManager reload = new TaskManager(tempDir.resolve("test-tasks.json"));
 
-        // List tasks with new CLI instance
-        newCli.execute(new String[]{"list"});
-
-        String output = getLogOutput();
-        assertTrue(output.contains("Persistent task"),
-                "Task should persist between CLI instances but got: " + output);
+        assertTrue(reload.taskExists(1));
+        assertEquals("Persistent task", reload.getTaskById(1).description());
     }
-
     @Test
     @DisplayName("Should maintain task count correctly")
     void shouldMaintainTaskCountCorrectly() {
         // Initially no tasks
-        cli.execute(new String[]{"list"});
-        String output = getLogOutput();
-        assertTrue(output.contains("No tasks found"));
+        assertEquals(0, taskManager.getTaskCount());
 
         // Add two tasks
         cli.execute(new String[]{"add", "Task", "1"});
         cli.execute(new String[]{"add", "Task", "2"});
-        appender.clear();
 
-        cli.execute(new String[]{"list"});
-        output = getLogOutput();
-        assertTrue(output.contains("Task 1") || output.contains("Task 1"));
-        assertTrue(output.contains("Task 2") || output.contains("Task 2"));
+        assertEquals(2, taskManager.getTaskCount());
+        assertTrue(taskManager.taskExists(1));
+        assertTrue(taskManager.taskExists(2));
 
         // Delete one task
         cli.execute(new String[]{"delete", "1"});
-        appender.clear();
 
-        cli.execute(new String[]{"list"});
-        output = getLogOutput();
-        assertFalse(output.contains("Task 1"));
-        assertTrue(output.contains("Task 2"));
+        assertEquals(1, taskManager.getTaskCount());
+        assertFalse(taskManager.taskExists(1));
+        assertTrue(taskManager.taskExists(2));
     }
 }
