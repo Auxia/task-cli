@@ -13,11 +13,16 @@ public record Task(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
+    public static final int MAX_DESCRIPTION_LENGTH = 10_000;
+
     public Task {
         if (id <= 0) throw new IllegalArgumentException("Task ID must be positive");
         if (description == null) throw new IllegalArgumentException("Task description cannot be null or empty");
         description = description.trim();
         if (description.isEmpty()) throw new IllegalArgumentException("Task description cannot be null or empty");
+        if (description.length() > MAX_DESCRIPTION_LENGTH)
+            throw new IllegalArgumentException(
+                "Task description exceeds maximum length of " + MAX_DESCRIPTION_LENGTH + " characters");
         Objects.requireNonNull(status, "Status cannot be null");
         Objects.requireNonNull(createdAt, "Created date cannot be null");
         Objects.requireNonNull(updatedAt, "Updated date cannot be null");
