@@ -209,18 +209,16 @@ class TaskCLITest {
     // ---------- persistence ----------
 
     @Test
-    @DisplayName("tasks persist between separate CommandLine instances sharing the same TaskManager")
-    void tasksPersistBetweenInstances() {
+    @DisplayName("tasks persist to disk and are visible to a fresh TaskManager reloading the same file")
+    void tasksPersistToDisk() {
+        Path tasksFile = tempDir.resolve("test-tasks.json");
         run("add", "Persistent task");
-        taskManager.saveTasks();
 
-        // New CLI instance, same TaskManager (simulates a reload from same file)
-        CommandLine newCli = TaskCLI.buildCommandLine(taskManager);
-        ByteArrayOutputStream newOut = new ByteArrayOutputStream();
-        newCli.execute("list");
-        // Check via taskManager directly — the task exists in memory
-        assertEquals(1, taskManager.getTaskCount());
-        assertEquals("Persistent task", taskManager.getTaskById(1).description());
+        // Fresh TaskManager reading from the same file — simulates a real app restart
+        TaskManager reloaded = new TaskManager(tasksFile);
+        assertEquals(1, reloaded.getTaskCount());
+        assertEquals("Persistent task", reloaded.getTaskById(1).description());
+        assertEquals(TaskStatus.TODO, reloaded.getTaskById(1).status());
     }
 
     @Test

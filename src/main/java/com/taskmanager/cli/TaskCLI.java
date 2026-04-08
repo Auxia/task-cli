@@ -119,7 +119,7 @@ public class TaskCLI {
         @Override
         public Integer call() {
             List<Task> tasks = (statusStr != null && !statusStr.isBlank())
-                    ? taskManager.getTasksByStatus(TaskStatus.fromDisplayName(statusStr))
+                    ? taskManager.getTasksByStatus(TaskStatus.fromDisplayName(statusStr.toLowerCase()))
                     : taskManager.getAllTasks();
 
             if (tasks.isEmpty()) {
@@ -159,13 +159,13 @@ public class TaskCLI {
         @Override public Integer call() { return markAs(taskManager, id, TaskStatus.DONE); }
     }
 
-    private static final Logger markLogger = LoggerFactory.getLogger(TaskCLI.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskCLI.class);
 
     private static int markAs(TaskManager tm, int id, TaskStatus status) {
         Task task = tm.updateTaskStatus(id, status);
         tm.saveTasks();
         System.out.printf("Task %d marked as %s%n", task.id(), status.getDisplayName());
-        markLogger.info("Task {} marked as {}", task.id(), status.name());
+        logger.info("Task {} marked as {}", task.id(), status.name());
         return 0;
     }
 }
