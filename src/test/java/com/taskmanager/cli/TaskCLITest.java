@@ -1,6 +1,7 @@
 package com.taskmanager.cli;
 
 import com.taskmanager.model.TaskStatus;
+import com.taskmanager.repository.JsonFileTaskRepository;
 import com.taskmanager.service.TaskManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
@@ -28,7 +29,7 @@ class TaskCLITest {
         capturedOut = new ByteArrayOutputStream();
         System.setOut(new PrintStream(capturedOut));
 
-        taskManager = new TaskManager(tempDir.resolve("test-tasks.json"));
+        taskManager = new TaskManager(new JsonFileTaskRepository(tempDir.resolve("test-tasks.json")));
         cli = TaskCLI.buildCommandLine(taskManager);
     }
 
@@ -215,7 +216,7 @@ class TaskCLITest {
         run("add", "Persistent task");
 
         // Fresh TaskManager reading from the same file — simulates a real app restart
-        TaskManager reloaded = new TaskManager(tasksFile);
+        TaskManager reloaded = new TaskManager(new JsonFileTaskRepository(tasksFile));
         assertEquals(1, reloaded.getTaskCount());
         assertEquals("Persistent task", reloaded.getTaskById(1).description());
         assertEquals(TaskStatus.TODO, reloaded.getTaskById(1).status());

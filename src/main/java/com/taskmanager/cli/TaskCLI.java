@@ -2,6 +2,7 @@ package com.taskmanager.cli;
 
 import com.taskmanager.model.Task;
 import com.taskmanager.model.TaskStatus;
+import com.taskmanager.repository.JsonFileTaskRepository;
 import com.taskmanager.service.TaskManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ import java.util.concurrent.Callable;
 public class TaskCLI {
 
     public static void main(String[] args) {
-        TaskManager tm = new TaskManager();
+        TaskManager tm = new TaskManager(new JsonFileTaskRepository());
         CommandLine cli = buildCommandLine(tm);
         if (args.length == 0) {
             cli.usage(System.out);
