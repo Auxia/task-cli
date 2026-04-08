@@ -4,9 +4,14 @@ import com.taskmanager.model.Task;
 import com.taskmanager.model.TaskStatus;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 class TaskManagerTest {
 
@@ -199,5 +204,91 @@ class TaskManagerTest {
         } finally {
             System.clearProperty("tasks.file");
         }
+    }
+
+    // ---------- File I/O edge cases ----------
+
+    @Test
+    @DisplayName("Corrupted JSON throws descriptive RuntimeException on load")
+    void corruptedJsonThrowsOnLoad() throws IOException {
+        Path path = tempDir.resolve("corrupted.json");
+        Files.writeString(path, "{invalid json");
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> new TaskManager(path));
+        assertTrue(ex.getMessage().contains("Failed to load tasks"),
+                "Expected 'Failed to load tasks' in message but got: " + ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Empty file written to disk loads as empty task list")
+    void emptyFileOnDiskLoadsEmpty() throws IOException {
+        Path path = tempDir.resolve("empty.json");
+        Files.writeString(path, "");
+        TaskManager manager = new TaskManager(path);
+        assertEquals(0, manager.getTaskCount());
+    }
+
+    @Test
+    @DisplayName("Missing parent directory: construction succeeds, saveTasks throws RuntimeException")
+    void missingParentDirectoryFailsOnSave() {
+        Path path = tempDir.resolve("nonexistent/tasks.json");
+        TaskManager manager = assertDoesNotThrow(() -> new TaskManager(path));
+        manager.addTask("A task");
+        RuntimeException ex = assertThrows(RuntimeException.class, manager::saveTasks);
+        assertTrue(ex.getMessage().contains("Failed to save tasks"),
+                "Expected 'Failed to save tasks' in message but got: " + ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Read-only parent directory causes saveTasks to throw RuntimeException")
+    void readOnlyDirectoryThrowsOnSave() throws IOException {
+        assumeFalse("root".equals(System.getProperty("user.name")),
+                "Skipped: setReadOnly() has no effect when running as root");
+        // saveTasks() creates a temp file in the parent dir before moving — making
+        // the directory read-only prevents temp file creation and triggers the error.
+        Path roDir = Files.createDirectory(tempDir.resolve("ro"));
+        Path path = roDir.resolve("tasks.json");
+        TaskManager manager = new TaskManager(path);
+        manager.addTask("A task");
+        manager.saveTasks(); // first save succeeds while dir is writable
+        roDir.toFile().setReadOnly();
+        try {
+            assertThrows(RuntimeException.class, manager::saveTasks);
+        } finally {
+            roDir.toFile().setWritable(true);
+        }
+    }
+
+    @Test
+    @Timeout(value = 10, unit = TimeUnit.SECONDS)
+    @DisplayName("10,000 tasks load and save without OOM or timeout")
+    void largeTaskFileHandledCorrectly() {
+        for (int i = 0; i < 10_000; i++) {
+            taskManager.addTask("Task " + i);
+        }
+        taskManager.saveTasks();
+
+        TaskManager reloaded = new TaskManager(testFile);
+        assertEquals(10_000, reloaded.getTaskCount());
+        assertEquals(10_000, reloaded.getTaskById(10_000).id());
+    }
+
+    @Test
+    @DisplayName("Whitespace-only description is rejected with IllegalArgumentException")
+    void whitespaceOnlyDescriptionRejected() {
+        assertThrows(IllegalArgumentException.class, () -> taskManager.addTask("   "));
+    }
+
+    @Test
+    @DisplayName("Description exceeding MAX_DESCRIPTION_LENGTH is rejected")
+    void descriptionOverMaxLengthRejected() {
+        String tooLong = "x".repeat(Task.MAX_DESCRIPTION_LENGTH + 1);
+        assertThrows(IllegalArgumentException.class, () -> taskManager.addTask(tooLong));
+    }
+
+    @Test
+    @DisplayName("Description at exactly MAX_DESCRIPTION_LENGTH is accepted")
+    void descriptionAtMaxLengthAccepted() {
+        String atLimit = "x".repeat(Task.MAX_DESCRIPTION_LENGTH);
+        assertDoesNotThrow(() -> taskManager.addTask(atLimit));
     }
 }
