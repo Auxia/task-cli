@@ -6,6 +6,8 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Timeout;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -208,7 +210,7 @@ class TaskManagerTest {
 
     @Test
     @DisplayName("Corrupted JSON throws descriptive RuntimeException on load")
-    void corruptedJsonThrowsOnLoad() throws Exception {
+    void corruptedJsonThrowsOnLoad() throws IOException {
         Path path = tempDir.resolve("corrupted.json");
         Files.writeString(path, "{invalid json");
         RuntimeException ex = assertThrows(RuntimeException.class, () -> new TaskManager(path));
@@ -218,7 +220,7 @@ class TaskManagerTest {
 
     @Test
     @DisplayName("Empty file written to disk loads as empty task list")
-    void emptyFileOnDiskLoadsEmpty() throws Exception {
+    void emptyFileOnDiskLoadsEmpty() throws IOException {
         Path path = tempDir.resolve("empty.json");
         Files.writeString(path, "");
         TaskManager manager = new TaskManager(path);
@@ -232,12 +234,15 @@ class TaskManagerTest {
         TaskManager manager = assertDoesNotThrow(() -> new TaskManager(path));
         manager.addTask("A task");
         RuntimeException ex = assertThrows(RuntimeException.class, manager::saveTasks);
-        assertNotNull(ex.getMessage());
+        assertTrue(ex.getMessage().contains("Failed to save tasks"),
+                "Expected 'Failed to save tasks' in message but got: " + ex.getMessage());
     }
 
     @Test
     @DisplayName("Read-only parent directory causes saveTasks to throw RuntimeException")
-    void readOnlyDirectoryThrowsOnSave() throws Exception {
+    void readOnlyDirectoryThrowsOnSave() throws IOException {
+        assumeFalse("root".equals(System.getProperty("user.name")),
+                "Skipped: setReadOnly() has no effect when running as root");
         // saveTasks() creates a temp file in the parent dir before moving — making
         // the directory read-only prevents temp file creation and triggers the error.
         Path roDir = Files.createDirectory(tempDir.resolve("ro"));
@@ -264,6 +269,7 @@ class TaskManagerTest {
 
         TaskManager reloaded = new TaskManager(testFile);
         assertEquals(10_000, reloaded.getTaskCount());
+        assertEquals(10_000, reloaded.getTaskById(10_000).id());
     }
 
     @Test
