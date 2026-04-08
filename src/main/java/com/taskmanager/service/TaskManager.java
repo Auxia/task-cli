@@ -75,22 +75,34 @@ public class TaskManager {
         }
 
         try {
-            String content = Files.readString(filePath);
-            if (content.trim().isEmpty()) {
-                logger.info("Tasks file is empty: {}", filePath);
-                return;
-            }
-
-            List<Task> loadedTasks = objectMapper.readValue(content, new TypeReference<List<Task>>() {});
-
-            for (Task task : loadedTasks) {
-                tasks.put(task.id(), task);
-                nextId = Math.max(nextId, task.id() + 1);
-            }
-            logger.info("Loaded {} tasks from {}", tasks.size(), filePath);
+            loadFrom(filePath);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load tasks from file: " + filePath, e);
+            logger.warn("Failed to load {}, attempting backup recovery...", filePath, e);
+            Path backup = filePath.resolveSibling(filePath.getFileName() + ".bak");
+            if (!Files.exists(backup)) {
+                throw new RuntimeException("Failed to load tasks and no backup found: " + filePath, e);
+            }
+            try {
+                loadFrom(backup);
+                logger.info("Recovered {} tasks from backup: {}", tasks.size(), backup);
+            } catch (IOException ex) {
+                throw new RuntimeException("Both tasks file and backup are unreadable: " + filePath, ex);
+            }
         }
+    }
+
+    private void loadFrom(Path path) throws IOException {
+        String content = Files.readString(path);
+        if (content.trim().isEmpty()) {
+            logger.info("Tasks file is empty: {}", path);
+            return;
+        }
+        List<Task> loadedTasks = objectMapper.readValue(content, new TypeReference<List<Task>>() {});
+        for (Task task : loadedTasks) {
+            tasks.put(task.id(), task);
+            nextId = Math.max(nextId, task.id() + 1);
+        }
+        logger.info("Loaded {} tasks from {}", tasks.size(), path);
     }
 
     public synchronized void saveTasks() {
