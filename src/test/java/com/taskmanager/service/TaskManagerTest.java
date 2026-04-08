@@ -209,13 +209,43 @@ class TaskManagerTest {
     // ---------- File I/O edge cases ----------
 
     @Test
-    @DisplayName("Corrupted JSON throws descriptive RuntimeException on load")
+    @DisplayName("Corrupted JSON with no backup throws descriptive RuntimeException")
     void corruptedJsonThrowsOnLoad() throws IOException {
         Path path = tempDir.resolve("corrupted.json");
         Files.writeString(path, "{invalid json");
         RuntimeException ex = assertThrows(RuntimeException.class, () -> new TaskManager(path));
         assertTrue(ex.getMessage().contains("Failed to load tasks"),
                 "Expected 'Failed to load tasks' in message but got: " + ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("Corrupted primary file recovers from .bak when backup is valid")
+    void corruptedPrimaryRecoverFromBackup() throws IOException {
+        // Save to produce both tasks.json and tasks.json.bak
+        taskManager.addTask("First task");
+        taskManager.addTask("Second task");
+        taskManager.saveTasks(); // tasks.json written + tasks.json.bak created
+        taskManager.saveTasks(); // second save: tasks.json.bak is now a valid copy
+
+        // Corrupt the primary file
+        Files.writeString(testFile, "{invalid json");
+
+        // Fresh TaskManager should silently recover from backup
+        TaskManager recovered = new TaskManager(testFile);
+        assertEquals(2, recovered.getTaskCount());
+        assertEquals("First task", recovered.getTaskById(1).description());
+        assertEquals("Second task", recovered.getTaskById(2).description());
+    }
+
+    @Test
+    @DisplayName("Both primary and backup corrupted throws RuntimeException")
+    void bothFilesCorruptedThrows() throws IOException {
+        Path backup = testFile.resolveSibling(testFile.getFileName() + ".bak");
+        Files.writeString(testFile, "{invalid json");
+        Files.writeString(backup, "{also invalid}");
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> new TaskManager(testFile));
+        assertTrue(ex.getMessage().contains("Both tasks file and backup are unreadable"),
+                "Expected 'Both tasks file and backup are unreadable' but got: " + ex.getMessage());
     }
 
     @Test
